@@ -1,5 +1,5 @@
 window.onload = function() {
-  let socket = new WebSocket("wss://socketsbay.com/wss/v2/1/demo/");
+  let socket = new WebSocket("ws://localhost:8080");
   let textView = document.getElementById("text-view");
   let buttonSend = document.getElementById("send-button");
   let buttonStop = document.getElementById("stop-button");
