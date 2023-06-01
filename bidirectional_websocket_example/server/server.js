@@ -13,17 +13,8 @@ wss.on('connection', (ws) => {
   console.log(`Client ${client_uuid} connected`);
 
   const sendMessage = (type, client_uuid, nickname, message) => {
-    clients.forEach((client) => {
-      const socket = client.ws;
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          'type': type,
-          'id': client_uuid,
-          'message': message,
-          'nickname': nickname
-        }));
-      }
-    });
+    // 모든 클라이언트에게 메시지를 전송합니다.
+    // 메시지의 형식은 다음과 같습니다. { 'type':, 'id':, 'message':, 'nickname': }
   }
 
   let connect_message = `${nickname} has connected`;
