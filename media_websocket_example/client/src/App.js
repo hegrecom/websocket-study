@@ -22,7 +22,7 @@ const MessageSection = ({ index, messages }) => {
         Messages from Server {index + 1}
       </Typography>
 
-      <div ref={containerRef} style={{ maxHeight: "200px", overflow: "auto" }}>
+      <div ref={containerRef} style={{ maxHeight: "400px", overflow: "auto" }}>
         {messages[index] &&
           messages[index].map((message, i) => {
             const { type, nickname, id, message: messageText } = message;
@@ -74,7 +74,7 @@ const ChatSection = ({
       const message = JSON.parse(event.data);
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        updatedMessages[index].push(message);
+        updatedMessages[index] = [...updatedMessages[index], message];
         return updatedMessages;
       });
     });
@@ -82,7 +82,10 @@ const ChatSection = ({
     socket.addEventListener("close", () => {
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        updatedMessages[index].push(`Closed connection from server ${index}`);
+        updatedMessages[index] = [
+          ...updatedMessages[index],
+          `Closed connection from server ${index}`,
+        ];
         return updatedMessages;
       });
     });
@@ -133,10 +136,10 @@ const ChatSection = ({
 };
 
 const WebSocketApp = () => {
-  const [serverAddresses, setServerAddresses] = useState(Array(5));
-  const [serverConnections, setServerConnections] = useState(Array(5));
+  const [serverAddresses, setServerAddresses] = useState(Array(2));
+  const [serverConnections, setServerConnections] = useState(Array(2));
   const [messages, setMessages] = useState(
-    Array(5)
+    Array(2)
       .fill(null)
       .map(() => [])
   );
@@ -148,6 +151,7 @@ const WebSocketApp = () => {
         connection.send(message);
       }
     });
+    setInputMessage("");
   };
 
   const handleKeyPress = (event) => {
