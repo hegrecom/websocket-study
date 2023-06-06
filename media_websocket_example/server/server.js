@@ -1,60 +1,72 @@
-import WebSocket, { WebSocketServer } from 'ws';
-import { v4 as uuidv4 } from 'uuid';
+import WebSocket, { WebSocketServer } from "ws";
+import { v4 as uuidv4 } from "uuid";
+import { fileTypeFromBuffer } from "file-type";
 
-const wss  = new WebSocketServer({ port: 8181 });
+const wss = new WebSocketServer({ port: 8181 });
 let client_index = 1;
 let clients = [];
 
-wss.on('connection', (ws) => {
+wss.on("connection", (ws) => {
   const client_uuid = uuidv4();
   let nickname = `AnonymousUser_${client_index}`;
   client_index += 1;
-  clients.push({ 'id': client_uuid, 'ws': ws, 'nickname': nickname });
+  clients.push({ id: client_uuid, ws: ws, nickname: nickname });
   console.log(`Client ${client_uuid} connected`);
 
   const sendMessage = (type, client_uuid, nickname, message) => {
     clients.forEach((client) => {
       const socket = client.ws;
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          'type': type,
-          'id': client_uuid,
-          'message': message,
-          'nickname': nickname
-        }));
+        socket.send(
+          JSON.stringify({
+            type: type,
+            id: client_uuid,
+            message: message,
+            nickname: nickname,
+          })
+        );
       }
     });
   };
 
   let connect_message = `${nickname} has connected`;
-  sendMessage('notification', client_uuid, nickname, connect_message);
+  sendMessage("notification", client_uuid, nickname, connect_message);
 
   const handleNicknameChange = (message) => {
-      let nickname_array = message.split(' ');
-      if (nickname_array.length >= 2) {
-        let old_nickname = nickname;
-        nickname = nickname_array[1];
-        let nickname_message = `Client ${old_nickname} changed to ${nickname}`;
-        sendMessage('nick_update', client_uuid, nickname, nickname_message);
-      }
+    let nickname_array = message.split(" ");
+    if (nickname_array.length >= 2) {
+      let old_nickname = nickname;
+      nickname = nickname_array[1];
+      let nickname_message = `Client ${old_nickname} changed to ${nickname}`;
+      sendMessage("nick_update", client_uuid, nickname, nickname_message);
+    }
   };
 
   const handleTextMessage = (message) => {
     let messageDecoder = new TextDecoder("utf-8");
     message = messageDecoder.decode(message);
     console.log(`Sending message to ${client_uuid}: ${message}`);
-    if (message.indexOf('/nick') === 0) {
+    if (message.indexOf("/nick") === 0) {
       handleNicknameChange(message);
     } else {
-      sendMessage('message', client_uuid, nickname, message);
+      sendMessage("message", client_uuid, nickname, message);
     }
   };
 
-  const handleBinaryMessage = (message) => {
-    sendMessage('binary', client_uuid, nickname, message);
-  }
+  const handleBinaryMessage = async (message) => {
+    const { _ext, mime } = await fileTypeFromBuffer(message);
+    console.log(`Binary message type is ext: ${_ext} mime: ${mime}`);
+    const filetype = mime.split("/")[0];
+    if (filetype === "image") {
+      sendMessage("image", client_uuid, nickname, message);
+    } else if (filetype === "video") {
+      sendMessage("video", client_uuid, nickname, message);
+    } else {
+      sendMessage("binary", client_uuid, nickname, message);
+    }
+  };
 
-  ws.on('message', (message, isBinary) => {
+  ws.on("message", (message, isBinary) => {
     if (isBinary) {
       handleBinaryMessage(message);
     } else {
@@ -64,18 +76,18 @@ wss.on('connection', (ws) => {
 
   const closeSocket = () => {
     let disconnect_message = `${nickname} has disconnected`;
-    sendMessage('notification', client_uuid, nickname, disconnect_message);
+    sendMessage("notification", client_uuid, nickname, disconnect_message);
     clients = clients.filter((client) => {
       return client.id !== client_uuid;
     });
-  }
+  };
 
-  ws.on('close', () => {
+  ws.on("close", () => {
     closeSocket();
   });
 
-  process.on('SIGINT', () => {
-    console.log('Closing things');
+  process.on("SIGINT", () => {
+    console.log("Closing things");
     closeSocket();
     process.exit();
   });
