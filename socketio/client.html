@@ -1,0 +1,61 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.io Client</title>
+  </head>
+  <body>
+    <h1>Socket.io Client</h1>
+    <input type="text" id="serverAddress" placeholder="Server Address" />
+    <button onclick="connect()">Connect</button>
+
+    <hr />
+
+    <input type="text" id="message" placeholder="Message to send" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      const serverAddressInput = document.getElementById("serverAddress");
+      const messageInput = document.getElementById("message");
+
+      let socket;
+
+      function connect() {
+        const serverAddress = serverAddressInput.value.trim();
+
+        if (serverAddress === "") {
+          alert("Please enter a valid server address");
+          return;
+        }
+
+        socket = io(serverAddress);
+
+        socket.on("connect", () => {
+          console.log("Connected to server");
+        });
+
+        socket.on("message", (data) => {
+          console.log("Received message:", data);
+        });
+      }
+
+      function sendMessage() {
+        const message = messageInput.value.trim();
+
+        if (message === "") {
+          alert("Please enter a message to send");
+          return;
+        }
+
+        if (!socket || socket.disconnected) {
+          alert("Not connected to server");
+          return;
+        }
+
+        socket.emit("message", message);
+        console.log("Sent message:", message);
+      }
+    </script>
+  </body>
+</html>
